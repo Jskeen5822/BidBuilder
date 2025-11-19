@@ -367,12 +367,17 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: "#e0e7ef",
+    width: "100%",
+    alignSelf: "stretch",
   },
   content: {
     padding: 24,
     gap: 24,
     alignItems: "stretch",
     justifyContent: "center",
+    width: "100%",
+    maxWidth: 1320,
+    alignSelf: "center",
   },
   hero: {
     backgroundColor: "#0f172a",
@@ -426,12 +431,14 @@ const styles = StyleSheet.create({
     gap: 20,
     alignItems: "stretch",
     width: "100%",
-    maxWidth: 900,
+    maxWidth: 980,
+    alignSelf: "center",
   },
   cardWide: {
-    maxWidth: 1200,
+    maxWidth: 1320,
     width: "100%",
     alignSelf: "center",
+    paddingHorizontal: 40,
   },
   cardHeader: {
     gap: 4,
