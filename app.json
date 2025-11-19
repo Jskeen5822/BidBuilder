@@ -1,0 +1,10 @@
+{
+  "expo": {
+    "name": "BidBuilder",
+    "slug": "bidbuilder",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "platforms": ["ios", "android", "web"],
+    "assetBundlePatterns": ["**/*"]
+  }
+}
