@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { View, Text, Pressable, StyleSheet, ImageBackground, Animated, Easing } from "react-native";
-import bgImage from "./assets/silhouette-man-working-at-construction-site-against-sky-during-sunset-EYF04002.jpg";
+import bgImage from "./assets/Sunset-over-construction-site-2011-alon-eisenberg.jpeg";
 import HomeScreen from "./HomeScreen";
 
 const TABS = [
