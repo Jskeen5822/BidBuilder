@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "BidBuilder",
-    "slug": "bidbuilder",
+    "name": "Bidzilla",
+    "slug": "bidzilla",
     "version": "1.0.0",
     "orientation": "portrait",
     "platforms": ["ios", "android", "web"],

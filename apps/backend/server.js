@@ -12,7 +12,7 @@ app.use(express.json());
 
 app.get("/", (_req, res) => {
   res.json({
-    name: "BidBuilder API",
+    name: "Bidzilla API",
     version: "1.0.0",
     routes: ["/auth/register", "/auth/login", "/projects"],
   });
@@ -27,5 +27,5 @@ app.use((err, _req, res, _next) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`BidBuilder API listening on http://localhost:${PORT}`);
+  console.log(`Bidzilla API listening on http://localhost:${PORT}`);
 });

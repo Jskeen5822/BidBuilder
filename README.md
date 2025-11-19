@@ -1,12 +1,12 @@
-# BidBuilder
+# Bidzilla
 
-BidBuilder is an Expo-powered React Native app that lets construction companies or homeowners publish projects, collect bids, and lock in the lowest price. Because it is built with React Native, the exact same codebase runs on iOS, Android, and the web.
+Bidzilla is an Expo-powered React Native app that lets construction companies or homeowners publish projects, collect bids, and lock in the lowest price. Because it is built with React Native, the exact same codebase runs on iOS, Android, and the web.
 
 ## Highlights
 
 - Create project briefs with owner, budget, delivery date, and scope highlights.
 - Track live bids directly on every project card and see the lowest offer at a glance.
-- Accept the cheapest bid with a single tap - BidBuilder flags it as the winner automatically.
+- Accept the cheapest bid with a single tap - Bidzilla flags it as the winner automatically.
 - Sort projects by recency, budget size, or number of bids to focus on what matters most.
 
 ## Getting started

@@ -14,7 +14,11 @@ import {
   getBidByBidder,
 } from "./context/ProjectsContext";
 
-const HomeScreen = ({ showCreateProjectOnly, showBidOnly }) => {
+const HomeScreen = ({
+  showCreateProjectOnly,
+  showBidOnly,
+  backgroundColor = "#e0e7ef",
+}) => {
   const {
     projects,
     sortOrder,
@@ -27,13 +31,13 @@ const HomeScreen = ({ showCreateProjectOnly, showBidOnly }) => {
 
   return (
     <ScrollView
-      style={styles.screen}
+      style={[styles.screen, { backgroundColor }]}
       contentContainerStyle={styles.content}
       keyboardShouldPersistTaps="handled"
     >
       {!showCreateProjectOnly && !showBidOnly && (
         <View style={styles.hero}>
-          <Text style={styles.eyebrow}>BidBuilder</Text>
+        <Text style={styles.eyebrow}>Bidzilla</Text>
           <Text style={styles.title}>
             List your project. Invite bids. Choose the best offer.
           </Text>

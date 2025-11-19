@@ -35,13 +35,13 @@ const HomepageTabs = () => {
   if (activeTab === "home") {
     content = (
       <View style={styles.tabContentTop}>
-        <Text style={styles.welcome}>Welcome to BidBuilder!</Text>
+        <Text style={styles.welcome}>Welcome to Bidzilla!</Text>
       </View>
     );
   } else if (activeTab === "create") {
-    content = <HomeScreen showCreateProjectOnly />;
+    content = <HomeScreen showCreateProjectOnly backgroundColor="transparent" />;
   } else if (activeTab === "bid") {
-    content = <HomeScreen showBidOnly />;
+    content = <HomeScreen showBidOnly backgroundColor="transparent" />;
   }
 
   const createPulseScale = motionAnim.interpolate({
@@ -55,6 +55,14 @@ const HomepageTabs = () => {
   const createPulseOpacity = motionAnim.interpolate({
     inputRange: [0, 0.5, 1],
     outputRange: [0.45, 0.1, 0.45],
+  });
+  const sweepTranslate = motionAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-420, 420],
+  });
+  const sweepOpacity = motionAnim.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [0, 0.55, 0],
   });
   const floatY = motionAnim.interpolate({
     inputRange: [0, 1],
@@ -72,22 +80,42 @@ const HomepageTabs = () => {
     inputRange: [0, 1],
     outputRange: ["-4deg", "4deg"],
   });
-
-  const swirlRotation = motionAnim.interpolate({
+  const sparkOpacity = motionAnim.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [0, 0.7, 0],
+  });
+  const spark1Y = motionAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [220, -220],
+  });
+  const spark2Y = motionAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [260, -260],
+  });
+  const spark3Y = motionAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [300, -240],
+  });
+  const spark1Scale = motionAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.5, 1.1],
+  });
+  const spark2Scale = motionAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.8, 1.2],
+  });
+  const spark3Scale = motionAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.6, 1.3],
+  });
+  const ringScale = motionAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.85, 1.05],
+  });
+  const ringRotate = motionAnim.interpolate({
     inputRange: [0, 1],
     outputRange: ["0deg", "360deg"],
   });
-
-  const renderSwirlLights = () => (
-    <Animated.View
-      pointerEvents="none"
-      style={[styles.swirlOrbit, { transform: [{ rotate: swirlRotation }] }]}
-    >
-      <View style={[styles.swirlLight, styles.swirlLightA]} />
-      <View style={[styles.swirlLight, styles.swirlLightB]} />
-      <View style={[styles.swirlLight, styles.swirlLightC]} />
-    </Animated.View>
-  );
 
   const renderAmbientAnimation = () => {
     if (activeTab === "create") {
@@ -97,6 +125,7 @@ const HomepageTabs = () => {
             pointerEvents="none"
             style={[
               styles.pulseCircle,
+              styles.pulseLeft,
               styles.createPulseLarge,
               {
                 transform: [{ scale: createPulseScale }],
@@ -108,6 +137,7 @@ const HomepageTabs = () => {
             pointerEvents="none"
             style={[
               styles.pulseCircle,
+              styles.pulseRight,
               styles.createPulseSmall,
               {
                 transform: [{ scale: createPulseScaleInner }],
@@ -115,7 +145,33 @@ const HomepageTabs = () => {
               },
             ]}
           />
-          {renderSwirlLights()}
+          <Animated.View
+            pointerEvents="none"
+            style={[
+              styles.lightSweep,
+              {
+                opacity: sweepOpacity,
+                transform: [
+                  { translateX: sweepTranslate },
+                  { rotate: "-12deg" },
+                ],
+              },
+            ]}
+          />
+          <Animated.View
+            pointerEvents="none"
+            style={[
+              styles.lightSweep,
+              styles.lightSweepSecondary,
+              {
+                opacity: sweepOpacity,
+                transform: [
+                  { translateX: sweepTranslate },
+                  { rotate: "10deg" },
+                ],
+              },
+            ]}
+          />
         </>
       );
     }
@@ -165,7 +221,63 @@ const HomepageTabs = () => {
               },
             ]}
           />
-          {renderSwirlLights()}
+          <Animated.View
+            pointerEvents="none"
+            style={[
+              styles.spark,
+              styles.sparkLeft,
+              {
+                opacity: sparkOpacity,
+                transform: [{ translateY: spark1Y }, { scale: spark1Scale }],
+              },
+            ]}
+          />
+          <Animated.View
+            pointerEvents="none"
+            style={[
+              styles.spark,
+              styles.sparkCenter,
+              {
+                opacity: sparkOpacity,
+                transform: [{ translateY: spark2Y }, { scale: spark2Scale }],
+              },
+            ]}
+          />
+          <Animated.View
+            pointerEvents="none"
+            style={[
+              styles.spark,
+              styles.sparkRight,
+              {
+                opacity: sparkOpacity,
+                transform: [{ translateY: spark3Y }, { scale: spark3Scale }],
+              },
+            ]}
+          />
+          <Animated.View
+            pointerEvents="none"
+            style={[
+              styles.cornerRing,
+              styles.cornerRingLeft,
+              {
+                transform: [{ scale: ringScale }, { rotate: ringRotate }],
+              },
+            ]}
+          />
+          <Animated.View
+            pointerEvents="none"
+            style={[
+              styles.cornerRing,
+              styles.cornerRingRight,
+              {
+                transform: [
+                  { scale: ringScale },
+                  { rotate: ringRotate },
+                ],
+                opacity: 0.45,
+              },
+            ]}
+          />
         </>
       );
     }
@@ -299,9 +411,6 @@ const styles = StyleSheet.create({
   pulseCircle: {
     position: "absolute",
     top: "35%",
-    left: "50%",
-    marginLeft: -150,
-    marginTop: -150,
     width: 300,
     height: 300,
     borderRadius: 300,
@@ -309,14 +418,20 @@ const styles = StyleSheet.create({
     borderColor: "rgba(79,70,229,0.4)",
     backgroundColor: "rgba(99,102,241,0.15)",
   },
+  pulseLeft: {
+    left: -140,
+    top: "20%",
+  },
+  pulseRight: {
+    right: -140,
+    top: "60%",
+  },
   createPulseLarge: {
     borderWidth: 3,
   },
   createPulseSmall: {
     width: 220,
     height: 220,
-    marginLeft: -110,
-    marginTop: -110,
     borderRadius: 220,
     borderColor: "rgba(59,130,246,0.4)",
   },
@@ -330,52 +445,70 @@ const styles = StyleSheet.create({
     borderColor: "rgba(15,23,42,0.2)",
   },
   ticketLeft: {
-    top: "25%",
-    left: "15%",
+    top: "18%",
+    left: -30,
   },
   ticketRight: {
-    bottom: "20%",
-    right: "12%",
+    bottom: "18%",
+    right: -30,
   },
   ticketCenter: {
-    top: "55%",
-    right: "30%",
+    top: "52%",
+    right: "15%",
   },
-  swirlOrbit: {
+  lightSweep: {
     position: "absolute",
-    top: "10%",
-    left: "50%",
-    width: 500,
-    height: 500,
-    marginLeft: -250,
-    borderRadius: 500,
-  },
-  swirlLight: {
-    position: "absolute",
-    width: 28,
-    height: 28,
-    borderRadius: 28,
-    backgroundColor: "rgba(255,255,255,0.35)",
+    top: "20%",
+    left: -200,
+    width: 900,
+    height: 160,
+    borderRadius: 160,
+    backgroundColor: "rgba(255,255,255,0.08)",
     shadowColor: "#fff",
-    shadowOpacity: 0.8,
-    shadowRadius: 12,
+    shadowOpacity: 0.6,
+    shadowRadius: 24,
   },
-  swirlLightA: {
-    top: 0,
-    left: "45%",
+  lightSweepSecondary: {
+    top: "55%",
+    width: 650,
+    height: 120,
   },
-  swirlLightB: {
-    bottom: 60,
-    right: 0,
-    width: 20,
-    height: 20,
-    borderRadius: 20,
+  spark: {
+    position: "absolute",
+    width: 18,
+    height: 90,
+    borderRadius: 18,
+    backgroundColor: "rgba(255,255,255,0.25)",
+    shadowColor: "#f8fafc",
+    shadowOpacity: 0.6,
+    shadowRadius: 18,
   },
-  swirlLightC: {
-    bottom: 0,
-    left: 20,
-    width: 24,
-    height: 24,
-    borderRadius: 24,
+  sparkLeft: {
+    left: "18%",
+    bottom: -40,
+  },
+  sparkCenter: {
+    left: "48%",
+    bottom: -60,
+  },
+  sparkRight: {
+    right: "16%",
+    bottom: -50,
+  },
+  cornerRing: {
+    position: "absolute",
+    width: 140,
+    height: 140,
+    borderRadius: 140,
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.3)",
+  },
+  cornerRingLeft: {
+    top: "10%",
+    left: "5%",
+  },
+  cornerRingRight: {
+    bottom: "10%",
+    right: "5%",
   },
 });
