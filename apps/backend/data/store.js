@@ -49,10 +49,25 @@ const defaultProjects = [
 
 defaultProjects.forEach((p) => projects.set(p.id, p));
 
-function addUser({ name, email, password }) {
+const nextProjectId = () => {
+  const highest = Array.from(projects.keys()).reduce((max, key) => {
+    const number = Number((key || "").split("-")[1]);
+    return Number.isNaN(number) ? max : Math.max(max, number);
+  }, 1026);
+  return `BB-${highest + 1}`;
+};
+
+function cloneProject(project) {
+  return {
+    ...project,
+    bids: project.bids.map((bid) => ({ ...bid })),
+  };
+}
+
+function addUser({ name, email, password, company }) {
   if (users.has(email)) throw new Error("User already exists");
   const id = `user-${users.size + 1}`;
-  const user = { id, name, email, password };
+  const user = { id, name, email, password, company };
   users.set(email, user);
   return user;
 }
@@ -62,37 +77,40 @@ function getUser(email) {
 }
 
 function addProject({ id, name, owner, budget, dueDate, scope }) {
-  if (projects.has(id)) throw new Error("Project already exists");
+  const projectId = id || nextProjectId();
+  if (projects.has(projectId)) throw new Error("Project already exists");
   const project = {
-    id,
+    id: projectId,
     name,
     owner,
-    budget,
+    budget: Number(budget),
     dueDate,
     scope,
     bids: [],
     winner: null,
     createdAt: Date.now(),
   };
-  projects.set(id, project);
-  return project;
+  projects.set(projectId, project);
+  return cloneProject(project);
 }
 
 function listProjects() {
-  return Array.from(projects.values()).sort((a, b) => b.createdAt - a.createdAt);
+  return Array.from(projects.values())
+    .sort((a, b) => b.createdAt - a.createdAt)
+    .map(cloneProject);
 }
 
 function addBid(projectId, { bidder, amount, timeline }) {
   const project = projects.get(projectId);
   if (!project) throw new Error("Project not found");
   const bid = {
-    id: `bid-${project.bids.length + 1}`,
+    id: `bid-${Date.now()}-${project.bids.length + 1}`,
     bidder,
-    amount,
+    amount: Number(amount),
     timeline,
   };
   project.bids.push(bid);
-  return bid;
+  return cloneProject(project);
 }
 
 function selectWinningBid(projectId, bidId) {
@@ -101,7 +119,7 @@ function selectWinningBid(projectId, bidId) {
   const bid = project.bids.find((b) => b.id === bidId);
   if (!bid) throw new Error("Bid not found");
   project.winner = bid.bidder;
-  return project;
+  return cloneProject(project);
 }
 
 module.exports = {

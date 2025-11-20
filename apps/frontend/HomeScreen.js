@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   ScrollView,
   View,
@@ -17,7 +17,7 @@ import {
 const HomeScreen = ({
   showCreateProjectOnly,
   showBidOnly,
-  backgroundColor = "#e0e7ef",
+  backgroundColor = "rgba(5,6,13,0.85)",
 }) => {
   const {
     projects,
@@ -28,6 +28,43 @@ const HomeScreen = ({
     acceptLowestBid,
     syncError,
   } = useProjects();
+  const [bidFilter, setBidFilter] = useState("all");
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const visibleProjects = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    return projects.filter((project) => {
+      const matchesSearch =
+        !term ||
+        project.name.toLowerCase().includes(term) ||
+        project.owner.toLowerCase().includes(term) ||
+        project.id.toLowerCase().includes(term);
+
+      let matchesFilter = true;
+      switch (bidFilter) {
+        case "needs":
+          matchesFilter = project.bids.length === 0;
+          break;
+        case "awarded":
+          matchesFilter = Boolean(project.winner);
+          break;
+        case "high":
+          matchesFilter = project.budget >= 250000;
+          break;
+        case "efficient":
+          matchesFilter = project.bids.length > 0 && project.bids.length <= 2;
+          break;
+        case "dueSoon":
+          matchesFilter =
+            new Date(project.dueDate).getTime() - Date.now() <
+            1000 * 60 * 60 * 24 * 120;
+          break;
+        default:
+          matchesFilter = true;
+      }
+      return matchesFilter && matchesSearch;
+    });
+  }, [projects, bidFilter, searchTerm]);
 
   return (
     <ScrollView
@@ -46,6 +83,11 @@ const HomeScreen = ({
             scopes, track offers in real time, and lock in the lowest price on any
             device.
           </Text>
+          <View style={styles.badgeRow}>
+            <Text style={styles.badge}>Ohio & nationwide coverage</Text>
+            <Text style={styles.badge}>Secure API ready for database sync</Text>
+            <Text style={styles.badge}>Fast bids with transparent filters</Text>
+          </View>
         </View>
       )}
 
@@ -56,11 +98,20 @@ const HomeScreen = ({
       )}
 
       {(showBidOnly || (!showCreateProjectOnly && !showBidOnly)) && (
-        <SectionCard title="Open Projects" subtitle="Tap a pill to reorder">
+        <SectionCard
+          title="Open Projects"
+          subtitle="Sort, filter, and choose the winning bid"
+        >
           {syncError ? <Text style={styles.syncAlert}>{syncError}</Text> : null}
           <SortTabs value={sortOrder} onChange={setSortOrder} />
-          {projects.length ? (
-            projects.map((project) => (
+          <BidFilters
+            value={bidFilter}
+            onChange={setBidFilter}
+            searchTerm={searchTerm}
+            onSearch={setSearchTerm}
+          />
+          {visibleProjects.length ? (
+            visibleProjects.map((project) => (
               <ProjectCard
                 key={project.id}
                 project={project}
@@ -96,12 +147,14 @@ const SortTabs = ({ value, onChange }) => (
       return (
         <Pressable
           key={option.value}
-          style={[styles.sortTab, isActive && styles.sortTabActive]}
+          style={({ hovered }) => [
+            styles.sortTab,
+            isActive && styles.sortTabActive,
+            hovered && styles.buttonHover,
+          ]}
           onPress={() => onChange(option.value)}
         >
-          <Text
-            style={[styles.sortLabel, isActive && styles.sortLabelActive]}
-          >
+          <Text style={[styles.sortLabel, isActive && styles.sortLabelActive]}>
             {option.label}
           </Text>
         </Pressable>
@@ -110,14 +163,68 @@ const SortTabs = ({ value, onChange }) => (
   </View>
 );
 
-const ProjectForm = ({ onSubmit }) => {
-  const [form, setForm] = useState({
-    name: "",
-    owner: "",
-    budget: "",
-    dueDate: "",
-    scope: "",
-  });
+const BidFilters = ({ value, onChange, searchTerm, onSearch }) => {
+  const filterOptions = [
+    { label: "All projects", value: "all" },
+    { label: "Needs bids", value: "needs" },
+    { label: "Awarded", value: "awarded" },
+    { label: "$250k+", value: "high" },
+    { label: "Quick response (≤2 bids)", value: "efficient" },
+    { label: "Due within 120 days", value: "dueSoon" },
+  ];
+
+  return (
+    <View style={styles.filterWrap}>
+      <View style={styles.filterRow}>
+        {filterOptions.map((option) => {
+          const isActive = option.value === value;
+          return (
+            <Pressable
+              key={option.value}
+              style={({ hovered }) => [
+                styles.sortTab,
+                isActive && styles.sortTabActive,
+                hovered && styles.buttonHover,
+              ]}
+              onPress={() => onChange(option.value)}
+            >
+              <Text
+                style={[styles.sortLabel, isActive && styles.sortLabelActive]}
+              >
+                {option.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+      <View style={styles.searchRow}>
+        <Text style={styles.searchLabel}>Search</Text>
+        <TextInput
+          value={searchTerm}
+          onChangeText={onSearch}
+          placeholder="Search owner, project, or ID"
+          placeholderTextColor="#8fb3e4"
+          style={styles.searchInput}
+        />
+      </View>
+    </View>
+  );
+};
+
+  const ProjectForm = ({ onSubmit }) => {
+    const [form, setForm] = useState({
+      name: "",
+      owner: "",
+      budget: "",
+      dueDate: "",
+      scope: "",
+    });
+    const canSubmit =
+      form.name.trim() &&
+      form.owner.trim() &&
+      Number(form.budget) > 0 &&
+      form.dueDate.trim() &&
+      form.scope.trim();
 
   const handleChange = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -170,7 +277,7 @@ const ProjectForm = ({ onSubmit }) => {
         placeholder="Briefly describe the major work items"
         multiline
       />
-      <PrimaryButton label="Publish project" onPress={handleSubmit} />
+      <PrimaryButton label="Publish project" onPress={handleSubmit} disabled={!canSubmit} />
     </View>
   );
 };
@@ -321,19 +428,22 @@ const LabeledInput = ({ label, multiline, ...inputProps }) => (
       {...inputProps}
       multiline={multiline}
       style={[styles.input, multiline && styles.textarea]}
-      placeholderTextColor="#94a3b8"
+      placeholderTextColor="#8fb3e4"
     />
   </View>
 );
 
-const PrimaryButton = ({ label, onPress }) => (
+const PrimaryButton = ({ label, onPress, disabled }) => (
   <Pressable
-    style={({ pressed }) => [
+    style={({ pressed, hovered }) => [
       styles.button,
       styles.primaryButton,
+      hovered && styles.buttonHover,
       pressed && styles.buttonPressed,
+      disabled && styles.buttonDisabled,
     ]}
-    onPress={onPress}
+    onPress={disabled ? undefined : onPress}
+    disabled={disabled}
   >
     <Text style={styles.primaryButtonLabel}>{label}</Text>
   </Pressable>
@@ -341,13 +451,15 @@ const PrimaryButton = ({ label, onPress }) => (
 
 const SecondaryButton = ({ label, onPress, disabled }) => (
   <Pressable
-    style={({ pressed }) => [
+    style={({ pressed, hovered }) => [
       styles.button,
       styles.secondaryButton,
+      hovered && !disabled && styles.buttonHover,
       disabled && styles.buttonDisabled,
       pressed && !disabled && styles.buttonPressed,
     ]}
     onPress={disabled ? undefined : onPress}
+    disabled={disabled}
   >
     <Text style={styles.secondaryButtonLabel}>{label}</Text>
   </Pressable>
@@ -370,7 +482,7 @@ const formatDate = (value) =>
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: "#e0e7ef",
+    backgroundColor: "transparent",
     width: "100%",
     alignSelf: "stretch",
   },
@@ -384,54 +496,74 @@ const styles = StyleSheet.create({
     alignSelf: "center",
   },
   hero: {
-    backgroundColor: "#0f172a",
+    backgroundColor: "rgba(10,10,20,0.85)",
     borderRadius: 32,
     padding: 32,
     alignItems: "stretch",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
     shadowColor: "#000",
-    shadowOpacity: 0.12,
-    shadowRadius: 24,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 8,
+    shadowOpacity: 0.35,
+    shadowRadius: 28,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 12,
     marginBottom: 12,
     width: "100%",
     maxWidth: 900,
+  },
+  eyebrow: {
+    color: "#f472b6",
+    textTransform: "uppercase",
+    letterSpacing: 5,
+    fontSize: 13,
+    marginBottom: 12,
+    fontWeight: "900",
+    textAlign: "center",
   },
   title: {
     fontSize: 32,
     fontWeight: "800",
     color: "#f8fafc",
-    marginBottom: 16,
+    marginBottom: 12,
     textAlign: "center",
-    letterSpacing: 1,
-    textShadowColor: "#1e293b",
+    letterSpacing: 0.8,
+    textShadowColor: "#0ea5e9",
     textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 6,
+    textShadowRadius: 10,
   },
   lead: {
     color: "#cbd5f5",
     fontSize: 18,
     textAlign: "center",
-    marginBottom: 8,
   },
-  eyebrow: {
-    color: "#60a5fa",
-    textTransform: "uppercase",
-    letterSpacing: 4,
-    fontSize: 14,
-    marginBottom: 10,
-    fontWeight: "900",
-    textAlign: "center",
+  badgeRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    justifyContent: "center",
+    marginTop: 12,
+  },
+  badge: {
+    color: "#f8fafc",
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.28)",
+    fontSize: 13,
   },
   card: {
-    backgroundColor: "#fff",
-    borderRadius: 28,
+    backgroundColor: "rgba(12,12,22,0.92)",
+    borderRadius: 24,
     padding: 24,
-    shadowColor: "#0f172a",
-    shadowOpacity: 0.10,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+    shadowColor: "#000",
+    shadowOpacity: 0.35,
     shadowRadius: 20,
     shadowOffset: { width: 0, height: 12 },
-    elevation: 6,
+    elevation: 10,
     gap: 20,
     alignItems: "stretch",
     width: "100%",
@@ -442,65 +574,99 @@ const styles = StyleSheet.create({
     maxWidth: 1320,
     width: "100%",
     alignSelf: "center",
-    paddingHorizontal: 40,
+    paddingHorizontal: 32,
   },
   cardHeader: {
     gap: 4,
     alignItems: "stretch",
   },
   cardTitle: {
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: "800",
-    color: "#0f172a",
+    color: "#f1f5f9",
     textAlign: "center",
     letterSpacing: 0.5,
   },
   cardSubtitle: {
-    color: "#64748b",
+    color: "#9ca3af",
     textAlign: "center",
-    fontSize: 15,
+    fontSize: 14,
   },
   sortTabs: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
-  title: {
-    fontSize: 32,
-    fontWeight: "800",
-    color: "#f8fafc",
-    marginBottom: 16,
-    textAlign: "center",
+  },
+  sortTab: {
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.12)",
+    backgroundColor: "rgba(255,255,255,0.04)",
+  },
+  sortTabActive: {
+    backgroundColor: "rgba(244,114,182,0.2)",
+    borderColor: "#f472b6",
+  },
+  sortLabel: {
+    color: "#e2e8f0",
+    fontWeight: "700",
+  },
+  sortLabelActive: {
+    color: "#fff7ff",
+  },
+  filterWrap: {
+    gap: 12,
+    marginTop: 12,
+  },
+  filterRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  searchRow: {
+    marginTop: 8,
+    gap: 6,
+  },
+  searchLabel: {
+    color: "#c7d2fe",
+    fontWeight: "700",
+    fontSize: 12,
     letterSpacing: 1,
-    textShadowColor: "#1e293b",
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 6,
-  },
-  lead: {
-    color: "#cbd5f5",
-    fontSize: 18,
-    textAlign: "center",
-    marginBottom: 8,
-  },
-  eyebrow: {
-    color: "#60a5fa",
     textTransform: "uppercase",
-    letterSpacing: 4,
-    fontSize: 14,
-    marginBottom: 10,
-    fontWeight: "900",
-    textAlign: "center",
   },
-    fontWeight: "600",
-    color: "#0f172a",
+  searchInput: {
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.14)",
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    color: "#f8fafc",
+  },
+  form: {
+    gap: 14,
+  },
+  inputGroup: {
+    gap: 6,
+  },
+  inputLabel: {
+    fontWeight: "700",
+    color: "#c7d2fe",
+    textTransform: "uppercase",
+    letterSpacing: 1.5,
+    fontSize: 12,
   },
   input: {
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#cbd5f5",
+    borderColor: "rgba(255,255,255,0.14)",
     paddingHorizontal: 14,
     paddingVertical: 12,
-    backgroundColor: "#f8fafc",
+    backgroundColor: "rgba(255,255,255,0.06)",
     fontSize: 16,
+    color: "#f8fafc",
   },
   textarea: {
     minHeight: 80,
@@ -510,36 +676,57 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 16,
     alignItems: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 8,
   },
   buttonPressed: {
     transform: [{ scale: 0.98 }],
   },
+  buttonHover: {
+    transform: [{ translateY: -2 }],
+    shadowOpacity: 0.45,
+  },
   primaryButton: {
-    backgroundColor: "#2563eb",
+    backgroundColor: "#ec4899",
+    borderWidth: 1,
+    borderColor: "#fb7185",
   },
   secondaryButton: {
-    backgroundColor: "#0f172a",
+    backgroundColor: "rgba(59,130,246,0.25)",
+    borderWidth: 1,
+    borderColor: "#38bdf8",
   },
   buttonDisabled: {
-    backgroundColor: "#94a3b8",
+    backgroundColor: "rgba(148,163,184,0.4)",
+    borderColor: "rgba(148,163,184,0.6)",
+    borderWidth: 1,
   },
   primaryButtonLabel: {
     color: "#fff",
-    fontWeight: "700",
+    fontWeight: "800",
     fontSize: 16,
+    letterSpacing: 0.5,
   },
   secondaryButtonLabel: {
-    color: "#fff",
+    color: "#e0f2fe",
     fontWeight: "700",
     fontSize: 16,
   },
   projectCard: {
     borderWidth: 1,
-    borderColor: "#e2e8f0",
+    borderColor: "rgba(255,255,255,0.08)",
     borderRadius: 20,
     padding: 16,
     gap: 16,
-    backgroundColor: "#fdfdfd",
+    backgroundColor: "rgba(15,16,30,0.85)",
+    shadowColor: "#000",
+    shadowOpacity: 0.25,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 8,
   },
   projectHeader: {
     flexDirection: "row",
@@ -548,19 +735,19 @@ const styles = StyleSheet.create({
   },
   projectName: {
     fontSize: 20,
-    fontWeight: "700",
-    color: "#0f172a",
+    fontWeight: "800",
+    color: "#f8fafc",
   },
   metaGroup: {
     alignItems: "flex-end",
     gap: 2,
   },
   metaText: {
-    color: "#64748b",
+    color: "#9ca3af",
     fontSize: 12,
   },
   scopeText: {
-    color: "#475569",
+    color: "#cbd5f5",
     fontSize: 15,
   },
   summaryRow: {
@@ -573,7 +760,7 @@ const styles = StyleSheet.create({
     minWidth: "30%",
   },
   summaryLabel: {
-    color: "#94a3b8",
+    color: "#a855f7",
     textTransform: "uppercase",
     fontSize: 12,
     letterSpacing: 1,
@@ -581,41 +768,43 @@ const styles = StyleSheet.create({
   summaryValue: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#0f172a",
+    color: "#e2e8f0",
   },
   winnerCard: {
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: "#bae6fd",
-    backgroundColor: "#e0f2fe",
+    borderColor: "#22d3ee",
+    backgroundColor: "rgba(34,211,238,0.12)",
     padding: 14,
     gap: 4,
   },
   winnerLabel: {
     fontWeight: "700",
-    color: "#0369a1",
+    color: "#7dd3fc",
   },
   winnerCopy: {
-    color: "#0f172a",
+    color: "#e0f2fe",
     fontSize: 16,
   },
   bidForm: {
     gap: 12,
     borderWidth: 1,
-    borderColor: "#e2e8f0",
+    borderColor: "rgba(255,255,255,0.08)",
     borderRadius: 16,
     padding: 14,
+    backgroundColor: "rgba(255,255,255,0.03)",
   },
   bidFormTitle: {
     fontWeight: "700",
-    color: "#0f172a",
+    color: "#f8fafc",
   },
   bidBoard: {
     borderWidth: 1,
-    borderColor: "#e2e8f0",
+    borderColor: "rgba(255,255,255,0.08)",
     borderRadius: 16,
     padding: 14,
     gap: 10,
+    backgroundColor: "rgba(255,255,255,0.03)",
   },
   bidBoardHeader: {
     flexDirection: "row",
@@ -626,32 +815,34 @@ const styles = StyleSheet.create({
   bidBoardTitle: {
     fontWeight: "700",
     fontSize: 16,
+    color: "#e2e8f0",
   },
   bidRow: {
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#cbd5f5",
+    borderColor: "rgba(255,255,255,0.12)",
     padding: 12,
     marginBottom: 8,
+    backgroundColor: "rgba(255,255,255,0.02)",
   },
   bidRowBest: {
-    backgroundColor: "#ecfccb",
-    borderColor: "#bef264",
+    backgroundColor: "rgba(16,185,129,0.12)",
+    borderColor: "#22c55e",
   },
   bidRowWinner: {
-    backgroundColor: "#d9f99d",
-    borderColor: "#84cc16",
+    backgroundColor: "rgba(45,212,191,0.16)",
+    borderColor: "#2dd4bf",
   },
   bidderName: {
     fontWeight: "700",
-    color: "#0f172a",
+    color: "#f8fafc",
   },
   bidAmount: {
-    color: "#0f172a",
+    color: "#e0f2fe",
     fontSize: 16,
   },
   bidTimeline: {
-    color: "#475569",
+    color: "#cbd5f5",
   },
   emptyRow: {
     color: "#94a3b8",
@@ -665,11 +856,13 @@ const styles = StyleSheet.create({
     fontSize: 18,
   },
   syncAlert: {
-    backgroundColor: "#fee2e2",
-    color: "#b91c1c",
+    backgroundColor: "rgba(239,68,68,0.18)",
+    color: "#fecdd3",
     padding: 12,
     borderRadius: 12,
     marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "rgba(248,113,113,0.45)",
   },
 });
 

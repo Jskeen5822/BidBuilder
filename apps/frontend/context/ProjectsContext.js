@@ -130,23 +130,49 @@ export const ProjectsProvider = ({ children }) => {
     [projects, sortOrder]
   );
 
-  const createProject = (payload) => {
+  const replaceProject = (updatedProject) => {
+    setProjects((current) => {
+      let replaced = false;
+      const mapped = current.map((project) => {
+        if (project.id === updatedProject.id) {
+          replaced = true;
+          return updatedProject;
+        }
+        return project;
+      });
+      return replaced ? mapped : [updatedProject, ...mapped];
+    });
+  };
+
+  const createProject = async (payload) => {
     const nextCounter = projectCounter + 1;
     setProjectCounter(nextCounter);
-    const newProject = {
+    const tempId = payload.id || `TMP-${nextCounter}`;
+    const optimistic = {
       ...payload,
-      id: `BB-${nextCounter}`,
+      id: tempId,
       bids: [],
       winner: null,
       createdAt: Date.now(),
     };
-    setProjects((current) => [newProject, ...current]);
-    postProject(newProject).catch((error) =>
-      console.warn("Failed to persist project:", error.message)
-    );
+    setProjects((current) => [optimistic, ...current]);
+    try {
+      const saved = await postProject(payload);
+      setProjects((current) => {
+        const filtered = current.filter((project) => project.id !== tempId);
+        return [saved, ...filtered];
+      });
+      const numeric = Number(String(saved.id).split("-")[1]);
+      if (!Number.isNaN(numeric) && numeric > projectCounter) {
+        setProjectCounter(numeric);
+      }
+    } catch (error) {
+      console.warn("Failed to persist project:", error.message);
+      setSyncError("Could not sync project to the server. Retry once online.");
+    }
   };
 
-  const addBid = (projectId, bid) => {
+  const addBid = async (projectId, bid) => {
     const bidEntry = {
       ...bid,
       id: `bid-${Date.now()}`,
@@ -158,12 +184,16 @@ export const ProjectsProvider = ({ children }) => {
           : project
       )
     );
-    postBid(projectId, bidEntry).catch((error) =>
-      console.warn("Failed to persist bid:", error.message)
-    );
+    try {
+      const updatedProject = await postBid(projectId, bid);
+      replaceProject(updatedProject);
+    } catch (error) {
+      console.warn("Failed to persist bid:", error.message);
+      setSyncError("Could not sync bid to the server. Retry once online.");
+    }
   };
 
-  const acceptLowestBid = (projectId) => {
+  const acceptLowestBid = async (projectId) => {
     let selectedBid = null;
     setProjects((current) =>
       current.map((project) => {
@@ -175,9 +205,13 @@ export const ProjectsProvider = ({ children }) => {
       })
     );
     if (selectedBid?.id) {
-      selectBid(projectId, selectedBid.id).catch((error) =>
-        console.warn("Failed to persist winner:", error.message)
-      );
+      try {
+        const project = await selectBid(projectId, selectedBid.id);
+        replaceProject(project);
+      } catch (error) {
+        console.warn("Failed to persist winner:", error.message);
+        setSyncError("Could not sync winner to the server. Retry once online.");
+      }
     }
   };
 

@@ -6,7 +6,7 @@ import { ProjectsProvider } from "./apps/frontend/context/ProjectsContext";
 export default function App() {
   return (
     <ProjectsProvider>
-      <SafeAreaView style={{ flex: 1, backgroundColor: "#e2e8f0" }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: "#05060d" }}>
         <StatusBar barStyle="light-content" />
         <HomepageTabs />
       </SafeAreaView>

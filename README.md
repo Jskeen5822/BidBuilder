@@ -35,6 +35,17 @@ Bidzilla is an Expo-powered React Native app that lets construction companies or
 
 4. (Optional) Set `EXPO_PUBLIC_API_URL` if your backend runs anywhere other than `http://localhost:4000`.
 
+   ```bash
+   # example: pointing web build at a remote API
+   EXPO_PUBLIC_API_URL="https://api.yourdomain.com" npm run web
+   ```
+
+5. Backend env flags:
+
+   - `PORT` — bind port for the API (default 4000).
+   - `ALLOWED_ORIGINS` — comma-separated list for CORS (default `*`).
+   - `DATABASE_URL` / `USE_DATABASE` — flag to swap in a real database adapter in `apps/backend/data/store.js`.
+
 5. In the running app:
    - Use **Create a Project** to publish scopes.
    - Scroll to **Open Projects** to see every live opportunity.
@@ -50,7 +61,7 @@ Bidzilla is an Expo-powered React Native app that lets construction companies or
 
 ## Backend API
 
-The new Express server (see `backend/`) exposes the following routes, all currently persisted in memory so you can swap in a real database later:
+The new Express server (see `apps/backend/`) exposes the following routes, all currently persisted in memory so you can swap in a real database later:
 
 - `POST /auth/register` — create a mock user account (password hashing can be added when the DB layer arrives).
 - `POST /auth/login` — returns a placeholder token and user payload.
@@ -61,6 +72,6 @@ The new Express server (see `backend/`) exposes the following routes, all curren
 
 ## Project structure
 
-- `frontend/` - presentation layer (screens, UI components, styles, app context, and API client).
-- `backend/` - Express API for auth, project listings, and bid storage (currently in-memory for easy DB swap later).
-- `firmware/` - placeholder for future native/embedded integrations (unused today).
+- `apps/frontend/` - presentation layer (screens, UI components, styles, app context, and API client).
+- `apps/backend/` - Express API for auth, project listings, and bid storage (currently in-memory for easy DB swap later).
+- `apps/firmware/` - placeholder for future native/embedded integrations (unused today).

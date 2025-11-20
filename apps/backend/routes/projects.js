@@ -7,14 +7,14 @@ const {
   selectWinningBid,
 } = require("../data/store");
 
-router.get("/", (req, res) => {
+router.get("/", (_req, res) => {
   const projects = listProjects();
   return res.json(projects);
 });
 
 router.post("/", (req, res) => {
   const { id, name, owner, budget, dueDate, scope } = req.body || {};
-  if (!id || !name || !owner || !budget || !dueDate || !scope) {
+  if (!name || !owner || !budget || !dueDate || !scope) {
     return res.status(400).json({ error: "Missing required project fields." });
   }
   const created = addProject({ id, name, owner, budget, dueDate, scope });
@@ -28,8 +28,8 @@ router.post("/:projectId/bids", (req, res) => {
     return res.status(400).json({ error: "Bidder, amount, and timeline are required." });
   }
   try {
-    const bid = addBid(projectId, { bidder, amount, timeline });
-    return res.status(201).json(bid);
+    const project = addBid(projectId, { bidder, amount, timeline });
+    return res.status(201).json(project);
   } catch (error) {
     return res.status(404).json({ error: error.message });
   }

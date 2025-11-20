@@ -1,4 +1,5 @@
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:4000";
+const RAW_BASE = process.env.EXPO_PUBLIC_API_URL || "http://localhost:4000";
+const BASE_URL = RAW_BASE.endsWith("/") ? RAW_BASE.slice(0, -1) : RAW_BASE;
 
 const jsonRequest = async (path, options = {}) => {
   const response = await fetch(`${BASE_URL}${path}`, {

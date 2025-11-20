@@ -3,13 +3,15 @@ const router = express.Router();
 const { addUser, getUser } = require("../data/store");
 
 router.post("/register", (req, res) => {
-  const { name, email, password } = req.body || {};
+  const { name, email, password, company } = req.body || {};
   if (!name || !email || !password) {
     return res.status(400).json({ error: "Name, email, and password are required." });
   }
   try {
-    const user = addUser({ name, email, password });
-    return res.status(201).json({ id: user.id, name: user.name, email: user.email });
+    const user = addUser({ name, email, password, company });
+    return res
+      .status(201)
+      .json({ id: user.id, name: user.name, email: user.email, company: user.company });
   } catch (error) {
     return res.status(400).json({ error: error.message });
   }
